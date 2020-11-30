@@ -1,102 +1,139 @@
-import React from 'react';
+import React, { Component } from 'react';
+import TimeFrame from './TimeFrame.jsx'
+import "../style/Countdown.css";
 
-class Countdown extends React.Component {
+class Countdown extends Component {
   constructor(props) {
     super(props);
-
+    this.timeLeft = null;
+    this.style = {};
     this.state = {
+      years: 0,
       days: 0,
       hours: 0,
       min: 0,
       sec: 0,
-    }
+    };
   }
 
   componentDidMount() {
-    // update every second
-    this.interval = setInterval(() => {
-      const date = this.calculateCountdown(this.props.date);
-      date ? this.setState(date) : this.stop();
-    }, 1000);
+    this.timeLeft = this.calculateCountdown(this.props.date);
+
+    if (this.timeLeft > 0) {
+      this.interval = setInterval(() => {
+        this.timeLeft = this.calculateCountdown(this.props.date);
+      }, 100);
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.timeLeft === 0) {
+      this.stop();
+    }
   }
 
   componentWillUnmount() {
     this.stop();
   }
 
+  stop() {
+    clearInterval(this.interval);
+  }
+
   calculateCountdown(endDate) {
     let diff = (Date.parse(new Date(endDate)) - Date.parse(new Date())) / 1000;
-
-    const timeLeft = {
+    let timeLeft = diff;
+    let newState = {
       years: 0,
       days: 0,
       hours: 0,
       min: 0,
       sec: 0,
-      millisec: 0,
     };
 
-    // calculate time difference between now and expected date
-    if (diff >= (365.25 * 86400)) { // 365.25 * 24 * 60 * 60
-      timeLeft.years = Math.floor(diff / (365.25 * 86400));
-      diff -= timeLeft.years * 365.25 * 86400;
-    }
-    if (diff >= 86400) { // 24 * 60 * 60
-      timeLeft.days = Math.floor(diff / 86400);
-      diff -= timeLeft.days * 86400;
-    }
-    if (diff >= 3600) { // 60 * 60
-      timeLeft.hours = Math.floor(diff / 3600);
-      diff -= timeLeft.hours * 3600;
-    }
-    if (diff >= 60) {
-      timeLeft.min = Math.floor(diff / 60);
-      diff -= timeLeft.min * 60;
-    }
-    timeLeft.sec = diff;
+    this.updateStyle(timeLeft);
 
+    if (!diff) {
+      this.setState(newState);
+      return 0;
+    }
+
+    // calculate time difference between now and expected date
+    if (diff >= 365.25 * 86400) {
+      newState.years = Math.floor(diff / (365.25 * 86400));
+      diff -= newState.years * 365.25 * 86400;
+    }
+
+    if (diff >= 86400) {
+      newState.days = Math.floor(diff / 86400);
+      diff -= newState.days * 86400;
+    }
+
+    if (diff >= 3600) {
+      newState.hours = Math.floor(diff / 3600);
+      diff -= newState.hours * 3600;
+    }
+
+    if (diff >= 60) {
+      newState.min = Math.floor(diff / 60);
+      diff -= newState.min * 60;
+    }
+
+    newState.sec = diff
+    this.setState(newState);
     return timeLeft;
   }
 
-  stop() {
-    clearInterval(this.interval);
-  }
-
-  addLeadingZeros(value) {
-    value = String(value);
-    while (value.length < 2) {
-      value = '0' + value;
-    }
-    return value;
+  updateStyle(timeLeft) {
+    let pulseTimer = Math.ceil((timeLeft / 86400) * 10);
+    pulseTimer = timeLeft < 585 ? 0.25 : timeLeft < 900 ? 0.5 : pulseTimer;
+    this.style = timeLeft <= 0 ? {} : { animation: `pulse ${pulseTimer}s infinite` };
   }
 
   render() {
-    const countDown = this.state;
+    const timeFrames = this.props.timeFrames.map((frame) => {
+      const time = this.state[frame.type];
+
+      if (frame.type !== 'years' || time > 0) {
+        return <TimeFrame key={frame.type} time={time} copy={frame.copy} />;
+      }
+    });
 
     return (
-      <div className="Countdown">
-        <span className="countdown-col">
-          <strong>{this.addLeadingZeros(countDown.days)}</strong>
-          <span>{countDown.days === 1 ? 'Day' : 'Days'}</span>
-        </span>
-
-        <span className="countdown-col">
-          <strong>{this.addLeadingZeros(countDown.hours)}</strong>
-          <span>Hours</span>
-        </span>
-
-        <span className="countdown-col">
-          <strong>{this.addLeadingZeros(countDown.min)}</strong>
-          <span>Min</span>
-        </span>
-
-        <span className="countdown-col">
-          <strong>{this.addLeadingZeros(countDown.sec)}</strong>
-          <span>Sec</span>
-        </span>
+      <div className="Countdown" style={this.style}>
+        <div className="countdown-container">
+          {timeFrames}
+        </div>
+        <h1 className="countdown-title">{this.props.title}</h1>
       </div>
     );
   }
 }
+
+Countdown.defaultProps = {
+  date: "2020-12-24T00:00:00",
+  timeFrames: [
+    {
+      'type': 'years',
+      'copy': ['Year', 'Years']
+    },
+    {
+      'type': 'days',
+      'copy': ['Day', 'Days']
+    },
+    {
+      'type': 'hours',
+      'copy': ['Hour', 'Hours']
+    },
+    {
+      'type': 'min',
+      'copy': ['Min']
+    },
+    {
+      'type': 'sec',
+      'copy': ['Sec']
+    }
+  ]
+};
 
 export default Countdown;
