@@ -87,7 +87,7 @@ class Countdown extends Component {
   updateStyle(timeLeft) {
     let pulseTimer = Math.ceil((timeLeft / 86400) * 10);
     pulseTimer = timeLeft < 585 ? 0.25 : timeLeft < 900 ? 0.5 : pulseTimer;
-    this.style = timeLeft <= 0 ? {} : { animation: `pulse ${pulseTimer}s infinite` };
+    this.style = timeLeft >= 0 && pulseTimer <= 10 ? { animation: `pulse ${pulseTimer}s infinite` } : {};
   }
 
   render() {

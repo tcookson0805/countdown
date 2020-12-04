@@ -48,7 +48,8 @@ class TimeFrame extends Component {
 }
 
 TimeFrame.defaultProps = {
-  time: 0
+  time: 0,
+  copy: ['']
 }
 
 export default TimeFrame;
